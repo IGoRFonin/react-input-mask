@@ -4,7 +4,12 @@ let createRoot = null;
 try {
   // React 18/19. На React 17 модуля нет — остаёмся на legacy-рендере.
   ({ createRoot } = await import("react-dom/client"));
-} catch {
+} catch (e) {
+  if (
+    e.code !== "MODULE_NOT_FOUND" &&
+    !String(e.message).includes("react-dom/client")
+  )
+    throw e;
   createRoot = null;
 }
 

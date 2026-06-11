@@ -12,6 +12,7 @@ export function setNativeInputValue(input, value) {
 }
 
 export function dispatchChange(input) {
+  // React wires onChange to the native 'input' event, not 'change'
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
