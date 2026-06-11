@@ -29,11 +29,4 @@
       }
     ]
   ],
-  "env": {
-    "test": {
-      "plugins": [
-        "@babel/plugin-transform-proto-to-assign"
-      ]
-    }
-  }
 }
