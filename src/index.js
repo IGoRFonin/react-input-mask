@@ -1,6 +1,4 @@
 import React, { useLayoutEffect, forwardRef } from "react";
-import PropTypes from "prop-types";
-
 import { useInputState, useInputElement, usePrevious } from "./hooks";
 import {
   validateMaxLength,
@@ -345,22 +343,5 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
 });
 
 InputMask.displayName = "InputMask";
-
-InputMask.propTypes = {
-  alwaysShowMask: PropTypes.bool,
-  beforeMaskedStateChange: PropTypes.func,
-  children: PropTypes.element,
-  mask: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.arrayOf(
-      PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(RegExp)]),
-    ),
-  ]),
-  maskPlaceholder: PropTypes.string,
-  onFocus: PropTypes.func,
-  onBlur: PropTypes.func,
-  onChange: PropTypes.func,
-  onMouseDown: PropTypes.func,
-};
 
 export default InputMask;

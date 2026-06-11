@@ -23,7 +23,6 @@ const minifiedPlugins = [
     babelrc: false,
     plugins: [
       "babel-plugin-minify-dead-code-elimination",
-      "babel-plugin-transform-react-remove-prop-types",
     ],
   }),
   terser({
