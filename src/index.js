@@ -16,16 +16,16 @@ import MaskUtils from "./utils/mask";
 // eslint-disable-next-line prefer-arrow-callback
 const InputMask = forwardRef(function InputMask(props, forwardedRef) {
   const {
-    alwaysShowMask,
+    alwaysShowMask = false,
     children,
     mask,
-    maskPlaceholder,
+    maskPlaceholder = "_",
     beforeMaskedStateChange,
     ...restProps
   } = props;
 
   validateMaxLength(props);
-  validateMaskPlaceholder(props);
+  validateMaskPlaceholder({ mask, maskPlaceholder });
 
   const maskUtils = new MaskUtils({ mask, maskPlaceholder });
 
@@ -345,11 +345,6 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
 });
 
 InputMask.displayName = "InputMask";
-
-InputMask.defaultProps = {
-  alwaysShowMask: false,
-  maskPlaceholder: "_",
-};
 
 InputMask.propTypes = {
   alwaysShowMask: PropTypes.bool,
