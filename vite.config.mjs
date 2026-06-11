@@ -1,9 +1,36 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+// When React 17 is installed, react-dom/client doesn't exist.
+// Provide an empty stub so Vite's import-analysis doesn't error on the
+// dynamic import in tests/helpers/react-render.js.
+function reactDomClientFallbackPlugin() {
+  const VIRTUAL_ID = "virtual:react-dom-client-stub";
+  const RESOLVED_ID = `\0${VIRTUAL_ID}`;
+  let hasClient = true;
+  try {
+    require.resolve("react-dom/client");
+  } catch {
+    hasClient = false;
+  }
+  if (hasClient) return null;
+  return {
+    name: "react-dom-client-fallback",
+    resolveId(id) {
+      if (id === "react-dom/client") return RESOLVED_ID;
+    },
+    load(id) {
+      if (id === RESOLVED_ID) return "export {};";
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), reactDomClientFallbackPlugin()].filter(Boolean),
   // Vite 8 uses oxc by default. The oxc plugin defaults to exclude: /\.js$/
   // so .js files with JSX (in src/ and tests/) are not processed.
   // `lang: "jsx"` is not in the public OxcOptions type but works at runtime —

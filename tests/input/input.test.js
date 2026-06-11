@@ -387,6 +387,8 @@ describe("react-input-mask", () => {
     const { input } = createInput(
       <Input mask="+7 (999) 999 99 99" autoFocus />,
     );
+    // React 17 doesn't fire focus events synchronously on autoFocus mount
+    await simulateFocus(input);
     await simulateInput(input, "222 222 22 22");
 
     await defer();
