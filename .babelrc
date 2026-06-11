@@ -35,9 +35,6 @@
         "@babel/plugin-transform-proto-to-assign",
         "@babel/transform-modules-commonjs"
       ]
-    },
-    "rollup": {
-      "plugins": ["babel-plugin-dev-expression"]
     }
   }
 }

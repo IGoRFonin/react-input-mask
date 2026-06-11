@@ -1,7 +1,17 @@
-import invariant from "invariant";
-import warning from "warning";
-
 import { CONTROLLED_PROPS } from "./constants";
+
+function invariant(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function warning(condition, message) {
+  if (process.env.NODE_ENV !== "production" && !condition) {
+    // eslint-disable-next-line no-console
+    console.error(`Warning: ${message}`);
+  }
+}
 
 export function validateMaxLength(props) {
   warning(
