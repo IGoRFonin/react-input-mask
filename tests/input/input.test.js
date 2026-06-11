@@ -1,10 +1,15 @@
 /* eslint-disable no-nonoctal-decimal-escape */
-/* global describe, it, afterEach */
 
+import { describe, it, afterEach, expect } from "vitest";
 import React from "react";
-import ReactDOM from "react-dom";
-import TestUtils from "react-dom/test-utils";
-import { expect } from "chai"; // eslint-disable-line import/no-extraneous-dependencies
+import { createTestRoot } from "../helpers/react-render";
+import {
+  setNativeInputValue,
+  dispatchChange,
+  dispatchFocus,
+  dispatchBlur,
+  dispatchPaste,
+} from "../helpers/events";
 import * as deferUtils from "../../src/utils/defer";
 import Input from "../../src";
 import { getInputSelection } from "../../src/utils/input";
@@ -49,6 +54,8 @@ function getInputDOMNode(input) {
   return input;
 }
 
+let currentRoot = null;
+
 function createInput(component) {
   const originalRef = component.ref;
   let { props } = component;
@@ -67,29 +74,29 @@ function createInput(component) {
     ref: refCallback,
   });
 
+  currentRoot = createTestRoot(container);
+
   function setProps(newProps) {
     props = {
       ...props,
       ...newProps,
     };
 
-    ReactDOM.render(React.createElement(Input, props), container);
+    currentRoot.render(React.createElement(Input, props));
   }
 
-  ReactDOM.render(component, container);
+  currentRoot.render(component);
 
   return { input, setProps };
 }
 
 async function simulateFocus(input) {
-  input.focus();
-  TestUtils.Simulate.focus(input);
+  dispatchFocus(input);
   await defer();
 }
 
 async function simulateBlur(input) {
-  input.blur();
-  TestUtils.Simulate.blur(input);
+  dispatchBlur(input);
 }
 
 async function simulateInput(input, string) {
@@ -98,15 +105,15 @@ async function simulateInput(input, string) {
   const valueBefore = value.slice(0, selection.start);
   const valueAfter = value.slice(selection.end);
 
-  input.value = valueBefore + string + valueAfter;
+  setNativeInputValue(input, valueBefore + string + valueAfter);
 
   setCursorPosition(input, selection.start + string.length);
 
-  TestUtils.Simulate.change(input);
+  dispatchChange(input);
 }
 
 async function simulateInputPaste(input, string) {
-  TestUtils.Simulate.paste(input);
+  dispatchPaste(input);
   await simulateInput(input, string);
 }
 
@@ -115,15 +122,20 @@ async function simulateBackspacePress(input) {
   const { value } = input;
 
   if (selection.length) {
-    input.value = value.slice(0, selection.start) + value.slice(selection.end);
+    setNativeInputValue(
+      input,
+      value.slice(0, selection.start) + value.slice(selection.end),
+    );
     setSelection(input, selection.start, 0);
   } else if (selection.start) {
-    input.value =
-      value.slice(0, selection.start - 1) + value.slice(selection.end);
+    setNativeInputValue(
+      input,
+      value.slice(0, selection.start - 1) + value.slice(selection.end),
+    );
     setSelection(input, selection.start - 1, 0);
   }
 
-  TestUtils.Simulate.change(input);
+  dispatchChange(input);
 }
 
 async function simulateDeletePress(input) {
@@ -133,11 +145,11 @@ async function simulateDeletePress(input) {
   const valueBefore = value.slice(0, selection.start);
   const valueAfter = value.slice(selection.start + removedLength);
 
-  input.value = valueBefore + valueAfter;
+  setNativeInputValue(input, valueBefore + valueAfter);
 
   setCursorPosition(input, selection.start);
 
-  TestUtils.Simulate.change(input);
+  dispatchChange(input);
 }
 
 // eslint-disable-next-line react/prefer-stateless-function
@@ -169,7 +181,10 @@ const FunctionalInputComponent = React.forwardRef((props, ref) => (
 
 describe("react-input-mask", () => {
   afterEach(() => {
-    ReactDOM.unmountComponentAtNode(container);
+    if (currentRoot) {
+      currentRoot.unmount();
+      currentRoot = null;
+    }
   });
 
   it("should format value on mount", async () => {
@@ -265,15 +280,15 @@ describe("react-input-mask", () => {
     );
     await simulateFocus(input);
 
-    input.value = "+49 12 9";
+    setNativeInputValue(input, "+49 12 9");
     setSelection(input, 8, 0);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("+49 12 99");
 
     await setCursorPosition(input, 7);
 
     await simulateInput(input, "1");
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("+49 12 199 ");
     expect(getInputSelection(input).start).to.equal(9);
     expect(getInputSelection(input).end).to.equal(9);
@@ -281,7 +296,7 @@ describe("react-input-mask", () => {
     await setCursorPosition(input, 8);
 
     await simulateInput(input, "9");
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("+49 12 199 ");
     expect(getInputSelection(input).start).to.equal(9);
     expect(getInputSelection(input).end).to.equal(9);
@@ -386,44 +401,44 @@ describe("react-input-mask", () => {
     await simulateFocus(input);
 
     await setCursorPosition(input, 0);
-    input.value = `a${input.value}`;
+    setNativeInputValue(input, `a${input.value}`);
     setCursorPosition(input, 1);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("a___ ____ ____ ____");
     expect(getInputSelection(input).start).to.equal(1);
     expect(getInputSelection(input).end).to.equal(1);
 
     await setSelection(input, 0, 19);
-    input.value = "a";
+    setNativeInputValue(input, "a");
     setCursorPosition(input, 1);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("a___ ____ ____ ____");
     expect(getInputSelection(input).start).to.equal(1);
     expect(getInputSelection(input).end).to.equal(1);
 
-    input.value = "aaaaa___ ____ ____ ____";
+    setNativeInputValue(input, "aaaaa___ ____ ____ ____");
     setSelection(input, 1, 4);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa a___ ____ ____");
     expect(getInputSelection(input).start).to.equal(6);
     expect(getInputSelection(input).end).to.equal(6);
 
     await setCursorPosition(input, 4);
-    input.value = "aaa a___ ____ ____";
+    setNativeInputValue(input, "aaa a___ ____ ____");
     setCursorPosition(input, 3);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaa_ a___ ____ ____");
 
     await setSelection(input, 3, 3);
-    input.value = "aaaaaa___ ____ ____";
+    setNativeInputValue(input, "aaaaaa___ ____ ____");
     setCursorPosition(input, 6);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa aa__ ____ ____");
 
     await setSelection(input, 3, 3);
-    input.value = "aaaaxa__ ____ ____";
+    setNativeInputValue(input, "aaaaxa__ ____ ____");
     setCursorPosition(input, 5);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa xa__ ____ ____");
     expect(getInputSelection(input).start).to.equal(6);
     expect(getInputSelection(input).end).to.equal(6);
@@ -437,30 +452,30 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("");
 
     await setCursorPosition(input, 0);
-    input.value = "aaa";
+    setNativeInputValue(input, "aaa");
     setCursorPosition(input, 3);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaa");
     expect(getInputSelection(input).start).to.equal(3);
     expect(getInputSelection(input).end).to.equal(3);
 
-    input.value = "aaaaa";
+    setNativeInputValue(input, "aaaaa");
     setCursorPosition(input, 5);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa a");
     expect(getInputSelection(input).start).to.equal(6);
     expect(getInputSelection(input).end).to.equal(6);
 
-    input.value = "aaaa afgh ijkl mnop";
+    setNativeInputValue(input, "aaaa afgh ijkl mnop");
     setCursorPosition(input, 19);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa afgh ijkl mnop");
     expect(getInputSelection(input).start).to.equal(19);
     expect(getInputSelection(input).end).to.equal(19);
 
-    input.value = "aaaa afgh ijkl mnopq";
+    setNativeInputValue(input, "aaaa afgh ijkl mnopq");
     setCursorPosition(input, 20);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("aaaa afgh ijkl mnop");
     expect(getInputSelection(input).start).to.equal(19);
     expect(getInputSelection(input).end).to.equal(19);
@@ -518,9 +533,9 @@ describe("react-input-mask", () => {
     await simulateInput(input, "4");
     expect(input.value).to.equal("+7 (012) 345 67 89");
 
-    input.value = "+7 (";
+    setNativeInputValue(input, "+7 (");
     setCursorPosition(input, 4);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     await setCursorPosition(input, 0);
     await simulateInput(input, "+");
     expect(input.value).to.equal("+7 (");
@@ -575,14 +590,14 @@ describe("react-input-mask", () => {
     await simulateBackspacePress(input);
     expect(input.value).to.equal("+7 (495) 156 45 4");
 
-    input.value = "+7 (";
+    setNativeInputValue(input, "+7 (");
     setCursorPosition(input, 4);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("+7 (");
 
-    input.value = "+7 ";
+    setNativeInputValue(input, "+7 ");
     setCursorPosition(input, 3);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
     expect(input.value).to.equal("+7 (");
   });
 
@@ -680,8 +695,8 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("+49 12 ");
 
     await simulateFocus(input);
-    input.value = "+49 12 39";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 39");
+    dispatchChange(input);
     await setCursorPosition(input, 6);
     await simulateBackspacePress(input);
     expect(input.value).to.equal("+49 13 ");
@@ -708,8 +723,8 @@ describe("react-input-mask", () => {
     expect(getInputSelection(input).end).to.equal(7);
 
     await simulateFocus(input);
-    input.value = "+49 12 39";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 39");
+    dispatchChange(input);
     await setCursorPosition(input, 6);
     await simulateBackspacePress(input);
     expect(getInputSelection(input).start).to.equal(5);
@@ -731,8 +746,8 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("+49 34 ");
 
     await setSelection(input, 0, 7);
-    input.value = "+49 12 394 5";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 394 5");
+    dispatchChange(input);
     await setSelection(input, 4, 2);
     await simulateBackspacePress(input);
     expect(input.value).to.equal("+49 34 59");
@@ -753,8 +768,8 @@ describe("react-input-mask", () => {
     expect(getInputSelection(input).start).to.equal(4);
     expect(getInputSelection(input).end).to.equal(4);
 
-    input.value = "+49 12 394 5";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 394 5");
+    dispatchChange(input);
     await setSelection(input, 4, 2);
     await simulateBackspacePress(input);
     expect(getInputSelection(input).start).to.equal(4);
@@ -832,8 +847,8 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("+49 12 ");
 
     await simulateFocus(input);
-    input.value = "+49 12 39";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 39");
+    dispatchChange(input);
     await setCursorPosition(input, 5);
     await simulateDeletePress(input);
     expect(input.value).to.equal("+49 13 ");
@@ -860,8 +875,8 @@ describe("react-input-mask", () => {
     expect(getInputSelection(input).end).to.equal(7);
 
     await simulateFocus(input);
-    input.value = "+49 12 39";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 39");
+    dispatchChange(input);
     await setCursorPosition(input, 5);
     await simulateDeletePress(input);
     expect(getInputSelection(input).start).to.equal(5);
@@ -883,8 +898,8 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("+49 34 ");
 
     await setSelection(input, 0, 7);
-    input.value = "+49 12 394 5";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 394 5");
+    dispatchChange(input);
     await setSelection(input, 4, 2);
     await simulateDeletePress(input);
     expect(input.value).to.equal("+49 34 59");
@@ -905,8 +920,8 @@ describe("react-input-mask", () => {
     expect(getInputSelection(input).start).to.equal(4);
     expect(getInputSelection(input).end).to.equal(4);
 
-    input.value = "+49 12 394 5";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+49 12 394 5");
+    dispatchChange(input);
     await setSelection(input, 4, 2);
     await simulateDeletePress(input);
     expect(getInputSelection(input).start).to.equal(4);
@@ -926,7 +941,7 @@ describe("react-input-mask", () => {
     setProps({ mask: null });
     expect(input.value).to.equal("3-4-7-8");
 
-    input.value = "0-1-2-3";
+    setNativeInputValue(input, "0-1-2-3");
 
     setProps({ mask: "9999" });
     expect(input.value).to.equal("0123");
@@ -951,7 +966,7 @@ describe("react-input-mask", () => {
 
     await setCursorPosition(input, 1);
     await simulateInput(input, "4");
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
 
     expect(input.value).to.equal("3478-122691-7____");
   });
@@ -1191,9 +1206,9 @@ describe("react-input-mask", () => {
     );
     await simulateFocus(input);
 
-    input.value = "12345678";
+    setNativeInputValue(input, "12345678");
     setCursorPosition(input, 8);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
 
     expect(input.value).to.equal("1234-5678");
   });
@@ -1206,9 +1221,9 @@ describe("react-input-mask", () => {
 
     // browser autofill replaces the whole value and
     // places the cursor at the end
-    input.value = "+75762184455";
+    setNativeInputValue(input, "+75762184455");
     setCursorPosition(input, input.value.length);
-    TestUtils.Simulate.change(input);
+    dispatchChange(input);
 
     expect(input.value).to.equal("+7 (576) 218-44-55");
   });
@@ -1356,8 +1371,8 @@ describe("react-input-mask", () => {
     const { input } = createInput(
       <Input mask="+7 (999) 999 99 99" maskPlaceholder={null} />,
     );
-    input.value = "+71234567890";
-    TestUtils.Simulate.change(input);
+    setNativeInputValue(input, "+71234567890");
+    dispatchChange(input);
     expect(input.value).to.equal("+7 (123) 456 78 90");
   });
 
