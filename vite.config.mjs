@@ -9,8 +9,7 @@ const require = createRequire(import.meta.url);
 // Provide an empty stub so Vite's import-analysis doesn't error on the
 // dynamic import in tests/helpers/react-render.js.
 function reactDomClientFallbackPlugin() {
-  const VIRTUAL_ID = "virtual:react-dom-client-stub";
-  const RESOLVED_ID = `\0${VIRTUAL_ID}`;
+  const RESOLVED_ID = "\0virtual:react-dom-client-stub";
   let hasClient = true;
   try {
     require.resolve("react-dom/client");
