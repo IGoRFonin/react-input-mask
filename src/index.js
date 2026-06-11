@@ -41,9 +41,60 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
     useInputState(initialValue, isMasked);
   const getInputElement = useInputElement(inputRef);
 
+  function isInputAutofilled(
+    value,
+    selection,
+    previousValue,
+    previousSelection,
+  ) {
+    const input = getInputElement();
+
+    // only check for positive match because it will be false negative
+    // in case of autofill simulation in tests
+    //
+    // input.matches throws an exception if selector isn't supported
+    try {
+      if (input.matches(":-webkit-autofill")) {
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+
+    // if input isn't focused then change event must have been triggered
+    // either by autofill or event simulation in tests
+    if (!isInputFocused(input)) {
+      return true;
+    }
+
+    // if cursor has moved to the end while previousSelection forbids it
+    // then it must be autofill
+    return (
+      previousSelection.end < previousValue.length &&
+      selection.end === value.length
+    );
+  }
+
   function onChange(event) {
     const currentState = getInputState();
-    const previousState = getLastInputState();
+    let previousState = getLastInputState();
+
+    // autofill replaces the entire value, ignore the previous one
+    // https://github.com/sanniassin/react-input-mask/issues/113
+    if (
+      isInputAutofilled(
+        currentState.value,
+        currentState.selection,
+        previousState.value,
+        previousState.selection,
+      )
+    ) {
+      previousState = {
+        value: maskUtils.formatValue(""),
+        selection: { start: 0, end: 0, length: 0 },
+      };
+    }
+
     let newInputState = maskUtils.processChange(currentState, previousState);
 
     if (beforeMaskedStateChange) {

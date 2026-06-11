@@ -1198,6 +1198,21 @@ describe("react-input-mask", () => {
     expect(input.value).to.equal("1234-5678");
   });
 
+  it("should handle autofill replacing the entire value", async () => {
+    const { input } = createInput(<Input mask="+7 (999) 999-99-99" />);
+    await simulateFocus(input);
+
+    expect(input.value).to.equal("+7 (___) ___-__-__");
+
+    // browser autofill replaces the whole value and
+    // places the cursor at the end
+    input.value = "+75762184455";
+    setCursorPosition(input, input.value.length);
+    TestUtils.Simulate.change(input);
+
+    expect(input.value).to.equal("+7 (576) 218-44-55");
+  });
+
   it("should handle transition between masked and non-masked state", async () => {
     // no-op onChange to prevent test warning
     const { input, setProps } = createInput(
