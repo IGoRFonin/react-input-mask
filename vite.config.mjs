@@ -5,18 +5,34 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 
+// react-dom/client only exists on React 18+. On React 17 it's absent.
+const hasReactDomClient = (() => {
+  try {
+    require.resolve("react-dom/client");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+// Pre-bundle React deps at server startup. Without this, the combined
+// `vitest run` (browser + node) optimizes react-dom mid-run on a cold cache,
+// and the first browser import races the optimizer ("does not provide an
+// export named 't'"), failing the suite on the first run after any dep change.
+const optimizeDepsInclude = [
+  "react",
+  "react-dom",
+  "react/jsx-dev-runtime",
+  "react/jsx-runtime",
+  ...(hasReactDomClient ? ["react-dom/client"] : []),
+];
+
 // When React 17 is installed, react-dom/client doesn't exist.
 // Provide an empty stub so Vite's import-analysis doesn't error on the
 // dynamic import in tests/helpers/react-render.js.
 function reactDomClientFallbackPlugin() {
   const RESOLVED_ID = "\0virtual:react-dom-client-stub";
-  let hasClient = true;
-  try {
-    require.resolve("react-dom/client");
-  } catch {
-    hasClient = false;
-  }
-  if (hasClient) return null;
+  if (hasReactDomClient) return null;
   return {
     name: "react-dom-client-fallback",
     resolveId(id) {
@@ -30,6 +46,7 @@ function reactDomClientFallbackPlugin() {
 
 export default defineConfig({
   plugins: [react(), reactDomClientFallbackPlugin()].filter(Boolean),
+  optimizeDeps: { include: optimizeDepsInclude },
   // Vite 8 uses oxc by default. The oxc plugin defaults to exclude: /\.js$/
   // so .js files with JSX (in src/, tests/ and the dev sandbox) are not
   // processed. `lang: "jsx"` is not in the public OxcOptions type but works at
