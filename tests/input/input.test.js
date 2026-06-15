@@ -152,10 +152,8 @@ async function simulateDeletePress(input) {
   dispatchChange(input);
 }
 
-// eslint-disable-next-line react/prefer-stateless-function
 class InnerClassInputComponent extends React.Component {
   render() {
-    // eslint-disable-next-line react/prop-types
     const { innerRef, ...restProps } = this.props;
     return (
       <div>

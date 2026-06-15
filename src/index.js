@@ -11,7 +11,6 @@ import { isInputFocused } from "./utils/input";
 import { isFunction, toString, getElementDocument } from "./utils/helpers";
 import MaskUtils from "./utils/mask";
 
-// eslint-disable-next-line prefer-arrow-callback
 const InputMask = forwardRef(function InputMask(props, forwardedRef) {
   const {
     alwaysShowMask = false,
@@ -118,7 +117,7 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
 
     if (isMasked && !maskUtils.isValueFilled(currentValue)) {
       let newValue = maskUtils.formatValue(currentValue);
-      let newSelection = maskUtils.getDefaultSelectionForValue(newValue);
+      const newSelection = maskUtils.getDefaultSelectionForValue(newValue);
       let newInputState = {
         value: newValue,
         selection: newSelection,
@@ -130,7 +129,6 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
           nextState: newInputState,
         });
         newValue = newInputState.value;
-        newSelection = newInputState.selection;
       }
 
       setInputState(newInputState);

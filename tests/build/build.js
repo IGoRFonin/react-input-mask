@@ -6,7 +6,6 @@ import { describe, it, expect } from "vitest";
 const require = createRequire(import.meta.url);
 
 describe("CommonJS build", () => {
-  // eslint-disable-next-line import/extensions
   const InputElement = require("../../lib/react-input-mask.production.min.js");
 
   it("should return a string", () => {
@@ -18,7 +17,6 @@ describe("CommonJS build", () => {
 });
 
 describe("UMD build", () => {
-  // eslint-disable-next-line import/extensions
   const InputElement = require("../../dist/react-input-mask.min.js");
 
   it("should return a string", () => {

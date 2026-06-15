@@ -8,7 +8,6 @@ function invariant(condition, message) {
 
 function warning(condition, message) {
   if (process.env.NODE_ENV !== "production" && !condition) {
-    // eslint-disable-next-line no-console
     console.error(`Warning: ${message}`);
   }
 }

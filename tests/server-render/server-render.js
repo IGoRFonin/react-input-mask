@@ -5,7 +5,6 @@ import { describe, it, expect } from "vitest";
 
 const require = createRequire(import.meta.url);
 // корневой index.js — CJS-переключатель dev/prod сборки из lib/
-// eslint-disable-next-line import/extensions
 const InputElement = require("../../index.js");
 
 describe("Test prerender", () => {

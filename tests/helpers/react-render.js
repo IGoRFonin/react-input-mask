@@ -13,7 +13,6 @@ try {
   createRoot = null;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export function createTestRoot(container) {
   if (createRoot) {
     const root = createRoot(container);
