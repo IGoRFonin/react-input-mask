@@ -31,11 +31,12 @@ function reactDomClientFallbackPlugin() {
 export default defineConfig({
   plugins: [react(), reactDomClientFallbackPlugin()].filter(Boolean),
   // Vite 8 uses oxc by default. The oxc plugin defaults to exclude: /\.js$/
-  // so .js files with JSX (in src/ and tests/) are not processed.
-  // `lang: "jsx"` is not in the public OxcOptions type but works at runtime —
-  // it overrides extension-based lang detection so .js files are parsed as JSX.
+  // so .js files with JSX (in src/, tests/ and the dev sandbox) are not
+  // processed. `lang: "jsx"` is not in the public OxcOptions type but works at
+  // runtime — it overrides extension-based lang detection so .js files are
+  // parsed as JSX.
   oxc: {
-    include: [/src\/.*\.js$/, /tests\/.*\.js$/, /\.[jt]sx$/],
+    include: [/src\/.*\.js$/, /tests\/.*\.js$/, /dev\/.*\.js$/, /\.[jt]sx$/],
     // @ts-ignore — lang is intentionally excluded from public OxcOptions
     lang: "jsx",
   },
