@@ -1,9 +1,6 @@
 import { babel } from "@rollup/plugin-babel";
 import terser from "@rollup/plugin-terser";
-import { nodeResolve } from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
-import protoToAssign from "./rollup.proto-to-assign.plugin.mjs";
 
 const input = "./src/index.js";
 
@@ -13,22 +10,14 @@ const isExternal = (id) =>
   !id.startsWith("\0") && !id.startsWith(".") && !id.startsWith("/");
 
 const external = ["react", "react-dom"];
-const plugins = [babel(), nodeResolve(), commonjs(), protoToAssign()];
+const plugins = [babel({ babelHelpers: "bundled" })];
 const minifiedPlugins = [
   ...plugins,
   replace({
+    preventAssignment: true,
     "process.env.NODE_ENV": '"production"',
   }),
-  babel({
-    babelrc: false,
-    plugins: [
-      "babel-plugin-minify-dead-code-elimination",
-      "babel-plugin-transform-react-remove-prop-types",
-    ],
-  }),
-  terser({
-    compress: { warnings: false },
-  }),
+  terser(),
 ];
 
 export default [
@@ -44,6 +33,7 @@ export default [
     plugins: [
       ...plugins,
       replace({
+        preventAssignment: true,
         "process.env.NODE_ENV": '"development"',
       }),
     ],

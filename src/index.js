@@ -1,6 +1,4 @@
 import React, { useLayoutEffect, forwardRef } from "react";
-import PropTypes from "prop-types";
-
 import { useInputState, useInputElement, usePrevious } from "./hooks";
 import {
   validateMaxLength,
@@ -13,19 +11,18 @@ import { isInputFocused } from "./utils/input";
 import { isFunction, toString, getElementDocument } from "./utils/helpers";
 import MaskUtils from "./utils/mask";
 
-// eslint-disable-next-line prefer-arrow-callback
 const InputMask = forwardRef(function InputMask(props, forwardedRef) {
   const {
-    alwaysShowMask,
+    alwaysShowMask = false,
     children,
     mask,
-    maskPlaceholder,
+    maskPlaceholder = "_",
     beforeMaskedStateChange,
     ...restProps
   } = props;
 
   validateMaxLength(props);
-  validateMaskPlaceholder(props);
+  validateMaskPlaceholder({ mask, maskPlaceholder });
 
   const maskUtils = new MaskUtils({ mask, maskPlaceholder });
 
@@ -41,9 +38,60 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
     useInputState(initialValue, isMasked);
   const getInputElement = useInputElement(inputRef);
 
+  function isInputAutofilled(
+    value,
+    selection,
+    previousValue,
+    previousSelection,
+  ) {
+    const input = getInputElement();
+
+    // only check for positive match because it will be false negative
+    // in case of autofill simulation in tests
+    //
+    // input.matches throws an exception if selector isn't supported
+    try {
+      if (input.matches(":-webkit-autofill")) {
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+
+    // if input isn't focused then change event must have been triggered
+    // either by autofill or event simulation in tests
+    if (!isInputFocused(input)) {
+      return true;
+    }
+
+    // if cursor has moved to the end while previousSelection forbids it
+    // then it must be autofill
+    return (
+      previousSelection.end < previousValue.length &&
+      selection.end === value.length
+    );
+  }
+
   function onChange(event) {
     const currentState = getInputState();
-    const previousState = getLastInputState();
+    let previousState = getLastInputState();
+
+    // autofill replaces the entire value, ignore the previous one
+    // https://github.com/sanniassin/react-input-mask/issues/113
+    if (
+      isInputAutofilled(
+        currentState.value,
+        currentState.selection,
+        previousState.value,
+        previousState.selection,
+      )
+    ) {
+      previousState = {
+        value: maskUtils.formatValue(""),
+        selection: { start: 0, end: 0, length: 0 },
+      };
+    }
+
     let newInputState = maskUtils.processChange(currentState, previousState);
 
     if (beforeMaskedStateChange) {
@@ -69,7 +117,7 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
 
     if (isMasked && !maskUtils.isValueFilled(currentValue)) {
       let newValue = maskUtils.formatValue(currentValue);
-      let newSelection = maskUtils.getDefaultSelectionForValue(newValue);
+      const newSelection = maskUtils.getDefaultSelectionForValue(newValue);
       let newInputState = {
         value: newValue,
         selection: newSelection,
@@ -81,7 +129,6 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
           nextState: newInputState,
         });
         newValue = newInputState.value;
-        newSelection = newInputState.selection;
       }
 
       setInputState(newInputState);
@@ -294,27 +341,5 @@ const InputMask = forwardRef(function InputMask(props, forwardedRef) {
 });
 
 InputMask.displayName = "InputMask";
-
-InputMask.defaultProps = {
-  alwaysShowMask: false,
-  maskPlaceholder: "_",
-};
-
-InputMask.propTypes = {
-  alwaysShowMask: PropTypes.bool,
-  beforeMaskedStateChange: PropTypes.func,
-  children: PropTypes.element,
-  mask: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.arrayOf(
-      PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(RegExp)]),
-    ),
-  ]),
-  maskPlaceholder: PropTypes.string,
-  onFocus: PropTypes.func,
-  onBlur: PropTypes.func,
-  onChange: PropTypes.func,
-  onMouseDown: PropTypes.func,
-};
 
 export default InputMask;

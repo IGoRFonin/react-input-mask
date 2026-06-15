@@ -1,9 +1,11 @@
-/* global describe, it */
-
+import { createRequire } from "node:module";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
-import { expect } from "chai"; // eslint-disable-line import/no-extraneous-dependencies
-import InputElement from "../../index";
+import { describe, it, expect } from "vitest";
+
+const require = createRequire(import.meta.url);
+// корневой index.js — CJS-переключатель dev/prod сборки из lib/
+const InputElement = require("../../index.js");
 
 describe("Test prerender", () => {
   it("should return a string", () => {

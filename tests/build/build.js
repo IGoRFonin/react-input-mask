@@ -1,19 +1,12 @@
-/* eslint-disable import/no-dynamic-require */
-/* global describe, it */
-
-import path from "path";
+import { createRequire } from "node:module";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
-import { expect } from "chai"; // eslint-disable-line import/no-extraneous-dependencies
+import { describe, it, expect } from "vitest";
 
-const rootDir = path.resolve(__dirname, "../..");
+const require = createRequire(import.meta.url);
 
 describe("CommonJS build", () => {
-  const libPath = path.resolve(
-    rootDir,
-    "lib/react-input-mask.production.min.js",
-  );
-  const InputElement = require(libPath);
+  const InputElement = require("../../lib/react-input-mask.production.min.js");
 
   it("should return a string", () => {
     const result = ReactDOMServer.renderToString(
@@ -24,8 +17,7 @@ describe("CommonJS build", () => {
 });
 
 describe("UMD build", () => {
-  const libPath = path.resolve(rootDir, "dist/react-input-mask.min.js");
-  const InputElement = require(libPath);
+  const InputElement = require("../../dist/react-input-mask.min.js");
 
   it("should return a string", () => {
     const result = ReactDOMServer.renderToString(
